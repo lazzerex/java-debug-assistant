@@ -11,7 +11,8 @@ public class LogAnalyzer {
     public List<ErrorReport> analyze(String content) {
         List<ErrorReport> errors = new ArrayList<>();
 
-        String[] lines = content.split("\n");
+        String normalized = content.replace("\r\n", "\n").replace("\r", "\n");
+        String[] lines = normalized.split("\n");
 
         StringBuilder currentError = new StringBuilder();
 
