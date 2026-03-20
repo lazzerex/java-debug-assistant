@@ -23,6 +23,8 @@ public class CommandHandler {
     private static final String COLOR_GREEN = "\u001B[32m";
     private static final String COLOR_RESET = "\u001B[0m";
 
+    private enum ColorMode { AUTO, ALWAYS, NEVER }
+
     private final LogAnalyzer analyzer = new LogAnalyzer();
     private final ExceptionExplainer explainer = new ExceptionExplainer();
 
@@ -70,10 +72,12 @@ public class CommandHandler {
             return 0;
         }
 
+        boolean colorEnabled = shouldUseColor(options.colorMode);
+
         if ("json".equals(options.format)) {
             System.out.println(formatJson(errors));
         } else {
-            formatText(errors, options.colorEnabled).forEach(System.out::println);
+            formatText(errors, colorEnabled).forEach(System.out::println);
         }
 
         return 0;
@@ -121,7 +125,26 @@ public class CommandHandler {
                     }
                     break;
                 case "--no-color":
-                    options.colorEnabled = false;
+                    options.colorMode = ColorMode.NEVER;
+                    break;
+                case "--color":
+                    if (i + 1 >= args.length) {
+                        throw new IllegalArgumentException("Missing value for --color");
+                    }
+                    String colorValue = args[++i].toLowerCase();
+                    switch (colorValue) {
+                        case "auto":
+                            options.colorMode = ColorMode.AUTO;
+                            break;
+                        case "always":
+                            options.colorMode = ColorMode.ALWAYS;
+                            break;
+                        case "never":
+                            options.colorMode = ColorMode.NEVER;
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported color mode: " + colorValue);
+                    }
                     break;
                 case "--prompt":
                     options.promptMode = true;
@@ -250,6 +273,16 @@ public class CommandHandler {
         return color + value + COLOR_RESET;
     }
 
+    private boolean shouldUseColor(ColorMode mode) {
+        if (mode == ColorMode.ALWAYS) return true;
+        if (mode == ColorMode.NEVER) return false;
+        // AUTO
+        String term = System.getenv("TERM");
+        boolean hasConsole = System.console() != null;
+        boolean termSupports = term != null && !term.equalsIgnoreCase("dumb");
+        return hasConsole && termSupports;
+    }
+
     private void printUsage() {
         System.out.println("Usage: java -cp out Main [options]\n" +
                 "  --help, -h            Show help\n" +
@@ -258,7 +291,8 @@ public class CommandHandler {
                 "  --prompt              Paste mode; read from stdin until an empty line\n" +
                 "  --format <text|json>  Output format (default: text)\n" +
                 "  --limit <n>           Limit number of errors reported\n" +
-                "  --no-color            Disable ANSI colors");
+                "  --color <auto|always|never>  Color output mode (default: auto)\n" +
+                "  --no-color            Disable ANSI colors (alias for --color never)");
     }
 
     private static class CliOptions {
@@ -267,7 +301,7 @@ public class CommandHandler {
         String format = "text";
         String input;
         int limit = -1;
-        boolean colorEnabled = true;
+        ColorMode colorMode = ColorMode.AUTO;
         boolean promptMode;
     }
 }
