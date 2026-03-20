@@ -1,7 +1,10 @@
 package explainer;
 
-import java.util.*;
 import model.ErrorReport;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ExceptionExplainer {
 
@@ -64,25 +67,12 @@ public class ExceptionExplainer {
         ));
     }
 
-    public String explain(ErrorReport error) {
+    public ExplanationDetail explain(ErrorReport error) {
         String type = error.getExceptionType();
 
         String explanation = explanations.getOrDefault(type, "No explanation available.");
         List<String> fixes = suggestions.getOrDefault(type, List.of("No suggestions available."));
 
-        StringBuilder result = new StringBuilder();
-
-        result.append("Error: ").append(type).append("\n");
-        result.append("Location: ").append(error.getFileName())
-              .append(":").append(error.getLineNumber()).append("\n\n");
-
-        result.append("Explanation:\n").append(explanation).append("\n\n");
-
-        result.append("Suggested fixes:\n");
-        for (String fix : fixes) {
-            result.append("- ").append(fix).append("\n");
-        }
-
-        return result.toString();
+        return new ExplanationDetail(explanation, fixes);
     }
 }
