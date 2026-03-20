@@ -8,9 +8,13 @@ A small CLI that parses stack traces and explains common Java exceptions. It can
 
 ## Build
 ```powershell
-# Compile all sources into the out/ directory
+# Compile all sources into the out/ directory (Windows PowerShell)
 $files = Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName }
 javac -d out $files
+```
+```bash
+# Compile all sources into the out/ directory (Linux/macOS/FreeBSD)
+find src -name '*.java' -print0 | xargs -0 javac -d out
 ```
 
 ## Usage
@@ -22,7 +26,7 @@ java -cp out Main --help
 java -cp out Main --input examples/sample-stacktrace.log
 
 # Read from stdin (e.g., piping a stack trace)
-type examples\sample-stacktrace.log | java -cp out Main --input -
+type examples/sample-stacktrace.log | java -cp out Main --input -
 
 # Paste interactively (end with empty line)
 java -cp out Main --prompt
@@ -105,7 +109,8 @@ Options:
 - `--prompt`: Paste mode; reads from stdin until an empty line
 - `--format <text|json>`: Output format (default: text)
 - `--limit <n>`: Limit the number of errors reported
-- `--no-color`: Disable ANSI colors in text output
+- `--color <auto|always|never>`: Color output mode (default: auto)
+- `--no-color`: Disable ANSI colors in text output (alias for `--color never`)
 
 ## Project layout
 - `src/` Java sources (analyzer, parser, explainer, CLI entry points)
