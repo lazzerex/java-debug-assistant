@@ -9,6 +9,7 @@ import util.FileUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +26,10 @@ public class CommandHandler {
 
     private enum ColorMode { AUTO, ALWAYS, NEVER }
 
+    private static final int EXIT_OK = 0;
+    private static final int EXIT_BAD_ARGS = 1;
+    private static final int EXIT_IO_ERROR = 2;
+
     private final LogAnalyzer analyzer = new LogAnalyzer();
     private final ExceptionExplainer explainer = new ExceptionExplainer();
 
@@ -34,24 +39,30 @@ public class CommandHandler {
             options = parseArgs(args);
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
-            printUsage();
-            return 1;
+            printUsage(System.err);
+            return EXIT_BAD_ARGS;
         }
 
         if (options.showHelp) {
-            printUsage();
-            return 0;
+            printUsage(System.out);
+            return EXIT_OK;
         }
 
         if (options.showVersion) {
             System.out.println("Debug Assistant version " + VERSION);
-            return 0;
+            return EXIT_OK;
         }
 
         if (options.input == null && !options.promptMode) {
             System.err.println("Error: --input <file|-> is required unless --prompt is used");
-            printUsage();
-            return 1;
+            printUsage(System.err);
+            return EXIT_BAD_ARGS;
+        }
+
+        if (options.input != null && options.promptMode) {
+            System.err.println("Error: --input cannot be combined with --prompt");
+            printUsage(System.err);
+            return EXIT_BAD_ARGS;
         }
 
         String content;
@@ -59,8 +70,10 @@ public class CommandHandler {
             content = options.promptMode ? readPrompt() : readInput(options.input);
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
-            return 1;
+            return EXIT_IO_ERROR;
         }
+
+        content = FileUtils.normalizeNewlines(content);
 
         List<ErrorReport> errors = analyzer.analyze(content);
         if (options.limit >= 0 && errors.size() > options.limit) {
@@ -69,7 +82,7 @@ public class CommandHandler {
 
         if (errors.isEmpty()) {
             System.err.println("No errors found.");
-            return 0;
+            return EXIT_OK;
         }
 
         boolean colorEnabled = shouldUseColor(options.colorMode);
@@ -80,7 +93,7 @@ public class CommandHandler {
             formatText(errors, colorEnabled).forEach(System.out::println);
         }
 
-        return 0;
+        return EXIT_OK;
     }
 
     private CliOptions parseArgs(String[] args) {
@@ -174,7 +187,7 @@ public class CommandHandler {
     }
 
     private String readStdin() throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         StringBuilder content = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -185,7 +198,7 @@ public class CommandHandler {
 
     private String readPrompt() throws IOException {
         System.out.println("Paste stack trace (finish with an empty line):");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         StringBuilder content = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -276,15 +289,14 @@ public class CommandHandler {
     private boolean shouldUseColor(ColorMode mode) {
         if (mode == ColorMode.ALWAYS) return true;
         if (mode == ColorMode.NEVER) return false;
-        // AUTO
         String term = System.getenv("TERM");
         boolean hasConsole = System.console() != null;
         boolean termSupports = term != null && !term.equalsIgnoreCase("dumb");
         return hasConsole && termSupports;
     }
 
-    private void printUsage() {
-        System.out.println("Usage: java -cp out Main [options]\n" +
+    private void printUsage(java.io.PrintStream out) {
+        out.println("Usage: java -cp out Main [options]\n" +
                 "  --help, -h            Show help\n" +
                 "  --version             Show version\n" +
                 "  --input <file|->      Input file path or '-' for stdin (required unless --prompt)\n" +
