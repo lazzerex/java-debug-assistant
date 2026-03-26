@@ -1,0 +1,83 @@
+{
+  "NullPointerException": {
+    "explanation": "A reference was null when the code expected an object instance.",
+    "suggestions": [
+      "Guard against null before dereferencing values",
+      "Ensure required fields are initialized",
+      "Trace upstream calls to find where the null originates"
+    ]
+  },
+  "IndexOutOfBoundsException": {
+    "explanation": "An index was outside the valid range for the collection or array.",
+    "suggestions": [
+      "Check bounds before accessing lists or arrays",
+      "Use size() or length to validate indexes",
+      "Avoid off-by-one errors when iterating"
+    ]
+  },
+  "IllegalArgumentException": {
+    "explanation": "A method received an argument value it cannot accept.",
+    "suggestions": [
+      "Validate inputs and fail fast with clear messages",
+      "Ensure preconditions are satisfied before calling the method",
+      "Add unit tests around boundary values"
+    ]
+  },
+  "IllegalStateException": {
+    "explanation": "The object is in a state where the requested operation is not allowed.",
+    "suggestions": [
+      "Check object lifecycle before invoking the operation",
+      "Avoid calling methods after close/shutdown",
+      "Add state checks and clearer error messages"
+    ]
+  },
+  "ClassCastException": {
+    "explanation": "Code attempted to cast an object to an incompatible type.",
+    "suggestions": [
+      "Verify the runtime type before casting",
+      "Prefer generics to avoid raw type casts",
+      "Review collection element types at insertion points"
+    ]
+  },
+  "NumberFormatException": {
+    "explanation": "Parsing a string to a number failed due to invalid format.",
+    "suggestions": [
+      "Validate input strings before parsing",
+      "Handle locale-specific separators when needed",
+      "Log the offending value for troubleshooting"
+    ]
+  },
+  "FileNotFoundException": {
+    "explanation": "The file path provided does not point to an existing readable file.",
+    "suggestions": [
+      "Verify the path is correct and accessible",
+      "Ensure the file is packaged or deployed where expected",
+      "Check working directory assumptions"
+    ]
+  },
+  "IOException": {
+    "explanation": "A generic I/O operation failed (disk, network, or stream).",
+    "suggestions": [
+      "Inspect the nested cause in the stack trace",
+      "Confirm paths, permissions, and network connectivity",
+      "Add retries or better error handling where appropriate"
+    ]
+  },
+  "SocketTimeoutException": {
+    "explanation": "A network socket operation exceeded its timeout threshold.",
+    "suggestions": [
+      "Increase timeouts for slow networks",
+      "Check server availability and connectivity",
+      "Add retries with backoff for transient issues"
+    ]
+  },
+  "SQLException": {
+    "explanation": "A database operation failed or the connection was disrupted.",
+    "suggestions": [
+      "Log SQL state/error code for vendor-specific guidance",
+      "Validate connection strings, credentials, and network access",
+      "Use connection pooling and retry transient failures"
+    ]
+  }
+}
+
