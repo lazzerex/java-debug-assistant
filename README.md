@@ -1,23 +1,26 @@
 # Debug Assistant
 
-A small CLI that parses stack traces and explains common Java exceptions. It can analyze a log file or accept pasted stack traces interactively.
+A small CLI that parses stack traces and explains common Java exceptions. It can analyze a log file, read from stdin, or accept pasted stack traces interactively.
 
 ## Requirements
 - JDK 11 or later
-- Windows PowerShell commands below assume you run them from the project root (`debug-assistant`).
+- No external libraries are required at runtime
+- Build and run use `javac`/`java` only
 
 ## Build
+Use `javac` directly.
+
 ```powershell
-# Compile all sources into the out/ directory (Windows PowerShell)
+# Manual javac (Windows PowerShell)
 $files = Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName }
 javac -d out $files
 ```
 ```bash
-# Compile all sources into the out/ directory (Linux/macOS/FreeBSD)
+# Manual javac (POSIX)
 find src -name '*.java' -print0 | xargs -0 javac -d out
 ```
 
-## Usage
+## Run
 ```powershell
 # Show help
 java -cp out Main --help
@@ -25,10 +28,10 @@ java -cp out Main --help
 # Analyze a log file
 java -cp out Main --input examples/sample-stacktrace.log
 
-# Read from stdin (e.g., piping a stack trace)
+# Read from stdin (piping)
 type examples/sample-stacktrace.log | java -cp out Main --input -
 
-# Paste interactively (end with empty line)
+# Paste interactively (finish with an empty line)
 java -cp out Main --prompt
 
 # Emit JSON instead of text
@@ -78,41 +81,53 @@ java -cp out Main --input examples/sample-stacktrace.log --format json
 ```json
 [
   {
-	"error": "NullPointerException",
-	"file": "App.java",
-	"line": 42,
-	"explanation": "You are trying to use an object that has not been initialized.",
-	"suggestedFixes": [
-	  "Check if the object is null before using it",
-	  "Ensure proper initialization",
-	  "Trace where the null value comes from"
-	]
+    "error": "NullPointerException",
+    "file": "App.java",
+    "line": 42,
+    "explanation": "You are trying to use an object that has not been initialized.",
+    "suggestedFixes": [
+      "Check if the object is null before using it",
+      "Ensure proper initialization",
+      "Trace where the null value comes from"
+    ]
   },
   {
-	"error": "IOException",
-	"file": "ConfigLoader.java",
-	"line": 27,
-	"explanation": "There was an input/output operation failure.",
-	"suggestedFixes": [
-	  "Check file paths",
-	  "Ensure file exists",
-	  "Handle exceptions properly"
-	]
+    "error": "IOException",
+    "file": "ConfigLoader.java",
+    "line": 27,
+    "explanation": "There was an input/output operation failure.",
+    "suggestedFixes": [
+      "Check file paths",
+      "Ensure file exists",
+      "Handle exceptions properly"
+    ]
   }
 ]
 ```
 
-Options:
+## Options
 - `--help` / `-h`: Show usage
 - `--version`: Show version
 - `--input <file|->`: Input log file path or `-` for stdin (required unless `--prompt`)
-- `--prompt`: Paste mode; reads from stdin until an empty line
+- `--prompt`: Paste mode; reads from stdin until an empty line (for copy/paste scenarios)
 - `--format <text|json>`: Output format (default: text)
 - `--limit <n>`: Limit the number of errors reported
 - `--color <auto|always|never>`: Color output mode (default: auto)
 - `--no-color`: Disable ANSI colors in text output (alias for `--color never`)
 
+## Exit codes
+- `0`: Success (results printed or nothing found)
+- `1`: Bad arguments
+- `2`: I/O error (missing/unreadable file, etc.)
+
+## Notes
+- File reads default to UTF-8 and normalize newlines for cross-platform consistency (Windows/Linux/macOS/FreeBSD).
+- Text output uses ANSI colors when a TTY/`TERM` is detected; override with `--color` / `--no-color` for CI or Windows consoles.
+- A data file (`resources/exceptions.json`) powers the explanation catalog and can be extended.
+- Forward-slash paths are used in docs/examples for portability.
+
 ## Project layout
 - `src/` Java sources (analyzer, parser, explainer, CLI entry points)
+- `resources/` Exception catalog JSON
 - `examples/` Sample stack traces for quick testing
 - `out/` Build output (created by `javac -d out ...`)
